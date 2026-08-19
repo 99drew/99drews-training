@@ -1,0 +1,11 @@
+{
+  "name": "treino-app-push-server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Funções serverless (Vercel) que tornam a notificação do cronômetro de descanso confiável mesmo com o iPhone bloqueado, usando Web Push real agendado via Upstash QStash. Deploy separado do treino-app (que é 100% estático). Ver ../README.md, seção 'Notificação com tela bloqueada (opcional)'.",
+  "dependencies": {
+    "@upstash/redis": "^1.34.0",
+    "web-push": "^3.6.7"
+  }
+}
