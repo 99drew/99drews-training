@@ -133,7 +133,7 @@ function ExerciseLogCard({ exercise, sets, pr, onChange, onToggleDone }) {
   const showSuggestionHint = !pr && Boolean(sets[0]?.weight) && !exercise.timed;
 
   return (
-    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 16, marginBottom: 14 }}>
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 14 }}>
       <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
         <ExerciseImage exercise={exercise} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -145,7 +145,7 @@ function ExerciseLogCard({ exercise, sets, pr, onChange, onToggleDone }) {
             {exercise.video && (
               <a href={exercise.video} target="_blank" rel="noopener noreferrer" style={{
                 display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, color: C.gold, textDecoration: "none",
-                border: `1px solid ${C.border}`, borderRadius: 20, padding: "4px 10px 4px 8px", background: C.surface2,
+                border: `1px solid ${C.border}`, borderRadius: 999, padding: "4px 10px 4px 8px", background: C.surface2,
               }}><PlayCircle size={13} /> Ver execução</a>
             )}
             {pr && <span style={{ fontSize: 11, color: C.textFaint }}>recorde: {pr.weight}kg</span>}
@@ -186,7 +186,7 @@ function ExerciseLogCard({ exercise, sets, pr, onChange, onToggleDone }) {
                 width: 34, height: 34, borderRadius: 9, border: `1px solid ${s.done ? C.gold : C.border}`,
                 background: s.done ? C.gold : "transparent", display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, cursor: "pointer",
-              }}><Check size={16} color={s.done ? "#231A0A" : C.textDim} /></button>
+              }}><Check size={16} color={s.done ? "#fff" : C.textDim} /></button>
             </div>
           );
         })}

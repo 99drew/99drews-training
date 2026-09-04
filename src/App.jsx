@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, Suspense, lazy } from "react";
-import { C, FONTS } from "./lib/theme";
+import { C, FONTS, SYSTEM_FONT } from "./lib/theme";
 import { DEFAULT_PLAN, ROTATION } from "./lib/plan";
 import { todayISO, lastSetsFor, seedSets, uid } from "./lib/helpers";
 import { storeGet, storeSet, photoSet, photoDelete } from "./lib/db";
@@ -8,7 +8,9 @@ import HomeScreen from "./screens/Home";
 import LogScreen from "./screens/Log";
 import HistoryScreen from "./screens/History";
 import EditScreen from "./screens/Edit";
+import ProfileScreen from "./screens/Profile";
 import BottomNav from "./components/BottomNav";
+import BackgroundArt from "./components/BackgroundArt";
 
 // Progress/Body puxam o recharts (biblioteca pesada) — carregadas sob demanda
 // pra manter o carregamento inicial do app leve.
@@ -28,16 +30,18 @@ export default function App() {
   const [expandedSession, setExpandedSession] = useState(null);
   const [toast, setToast] = useState(null);
   const [progressExercise, setProgressExercise] = useState(null);
+  const [profile, setProfile] = useState({ height: null });
 
   useEffect(() => {
     (async () => {
-      const [p, customized, s, m, ph, d] = await Promise.all([
+      const [p, customized, s, m, ph, d, pf] = await Promise.all([
         storeGet("customPlan", null),
         storeGet("planCustomized", false),
         storeGet("sessions", []),
         storeGet("measurements", []),
         storeGet("photoIndex", []),
         storeGet("draft", null),
+        storeGet("profile", { height: null }),
       ]);
       // só usa o plano salvo se ele realmente foi editado por ela (add/editar/
       // remover exercício) — sem isso, uma cópia salva do DEFAULT_PLAN antigo
@@ -48,6 +52,7 @@ export default function App() {
       setSessions(s);
       setMeasurements(m);
       setPhotoIndex(ph);
+      setProfile(pf);
       setProgressExercise(activePlan.A.exercises[0].name);
       // retoma um treino em andamento (ex: app foi recarregado ao voltar de
       // assistir um vídeo de execução e perdeu o estado em memória)
@@ -173,6 +178,11 @@ export default function App() {
     }
   }
 
+  async function updateProfile(patch) {
+    const newProfile = { ...profile, ...patch };
+    if (await storeSet("profile", newProfile)) setProfile(newProfile);
+  }
+
   async function addMeasurement(entry) {
     const newList = [...measurements, { ...entry, id: uid() }];
     if (await storeSet("measurements", newList)) { setMeasurements(newList); showToast("Medida registrada!"); }
@@ -199,14 +209,15 @@ export default function App() {
     return (
       <div style={{ background: C.bg, minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{FONTS}</style>
-        <div style={{ color: C.gold, fontFamily: "Fraunces, serif", fontSize: 18 }}>Carregando…</div>
+        <div style={{ color: C.primary, fontFamily: SYSTEM_FONT, fontWeight: 600, fontSize: 18 }}>Carregando…</div>
       </div>
     );
   }
 
   return (
-    <div style={{ background: C.bg, minHeight: "100dvh", color: C.text, fontFamily: "Inter, sans-serif", paddingBottom: tab === "log" ? 0 : 88, position: "relative" }}>
+    <div style={{ background: C.bg, minHeight: "100dvh", color: C.text, fontFamily: SYSTEM_FONT, paddingBottom: tab === "log" ? 0 : 88, position: "relative" }}>
       <style>{FONTS}</style>
+      <BackgroundArt />
 
       {toast && (
         <div style={{
@@ -217,35 +228,41 @@ export default function App() {
         }}>{toast}</div>
       )}
 
-      {tab === "home" && (
-        <HomeScreen plan={plan} sessions={sessions} suggestedNext={suggestedNext} streak={streak} prCount={Object.keys(prMap).length} onStart={startWorkout} />
-      )}
+      <div style={{ position: "relative", zIndex: 1 }}>
+        {tab === "home" && (
+          <HomeScreen plan={plan} sessions={sessions} suggestedNext={suggestedNext} streak={streak} prCount={Object.keys(prMap).length} onStart={startWorkout} />
+        )}
 
-      {tab === "log" && draft && (
-        <LogScreen draft={draft} workout={plan[draft.workout]} updateSet={updateSet} prMap={prMap}
-          onCancel={() => { setDraft(null); setTab("home"); }} onSave={saveSession} />
-      )}
+        {tab === "log" && draft && (
+          <LogScreen draft={draft} workout={plan[draft.workout]} updateSet={updateSet} prMap={prMap}
+            onCancel={() => { setDraft(null); setTab("home"); }} onSave={saveSession} />
+        )}
 
-      {tab === "history" && (
-        <HistoryScreen sessions={sessions} expanded={expandedSession} setExpanded={setExpandedSession} onDelete={deleteSession} />
-      )}
+        {tab === "history" && (
+          <HistoryScreen sessions={sessions} expanded={expandedSession} setExpanded={setExpandedSession} onDelete={deleteSession} />
+        )}
 
-      {tab === "progress" && (
-        <Suspense fallback={<ScreenFallback />}>
-          <ProgressScreen sessions={sessions} allExercises={allExercises} exercise={progressExercise} setExercise={setProgressExercise} prMap={prMap} streak={streak} />
-        </Suspense>
-      )}
+        {tab === "progress" && (
+          <Suspense fallback={<ScreenFallback />}>
+            <ProgressScreen sessions={sessions} allExercises={allExercises} exercise={progressExercise} setExercise={setProgressExercise} prMap={prMap} streak={streak} />
+          </Suspense>
+        )}
 
-      {tab === "body" && (
-        <Suspense fallback={<ScreenFallback />}>
-          <BodyScreen measurements={measurements} addMeasurement={addMeasurement} deleteMeasurement={deleteMeasurement}
-            photoIndex={photoIndex} addPhoto={addPhoto} deletePhoto={deletePhoto} />
-        </Suspense>
-      )}
+        {tab === "body" && (
+          <Suspense fallback={<ScreenFallback />}>
+            <BodyScreen measurements={measurements} addMeasurement={addMeasurement} deleteMeasurement={deleteMeasurement}
+              photoIndex={photoIndex} addPhoto={addPhoto} deletePhoto={deletePhoto} />
+          </Suspense>
+        )}
 
-      {tab === "edit" && (
-        <EditScreen plan={plan} updatePlan={updatePlan} showToast={showToast} />
-      )}
+        {tab === "profile" && (
+          <ProfileScreen profile={profile} updateProfile={updateProfile} bodyWeight={bodyWeight} measurements={measurements} />
+        )}
+
+        {tab === "edit" && (
+          <EditScreen plan={plan} updatePlan={updatePlan} showToast={showToast} />
+        )}
+      </div>
 
       {tab !== "log" && <BottomNav tab={tab} setTab={setTab} />}
     </div>

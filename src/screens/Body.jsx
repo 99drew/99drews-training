@@ -45,7 +45,7 @@ function MeasurementsPanel({ measurements, addMeasurement, deleteMeasurement }) 
 
   return (
     <div>
-      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 16, marginBottom: 18 }}>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 18 }}>
         <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Registrar hoje ({fmtDate(todayISO())})</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
           <LabeledInput label="Peso (kg)" value={form.weight} onChange={(v) => setForm({ ...form, weight: v })} />
@@ -105,7 +105,7 @@ function PhotosPanel({ photoIndex, addPhoto, deletePhoto }) {
 
   return (
     <div>
-      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 16, marginBottom: 18 }}>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 18 }}>
         <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>Adicionar foto de hoje</div>
         <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
           {POSES.map((p) => (
@@ -126,7 +126,7 @@ function PhotosPanel({ photoIndex, addPhoto, deletePhoto }) {
       <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
         {["Todas", ...POSES].map((p) => (
           <button key={p} onClick={() => setFilter(p)} style={{
-            padding: "6px 12px", borderRadius: 20, fontSize: 11.5, cursor: "pointer",
+            padding: "6px 12px", borderRadius: 999, fontSize: 11.5, cursor: "pointer",
             border: `1px solid ${filter === p ? C.gold : C.border}`, background: filter === p ? C.goldDim : "transparent", color: C.text,
           }}>{p}</button>
         ))}

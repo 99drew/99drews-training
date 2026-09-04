@@ -16,7 +16,7 @@ export default function HistoryScreen({ sessions, expanded, setExpanded, onDelet
         const isOpen = expanded === s.id;
         const totalVolume = Object.values(s.exercises).flat().reduce((acc, set) => acc + (parseFloat(set.weight) || 0) * (parseFloat(set.reps) || 0), 0);
         return (
-          <div key={s.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, marginBottom: 10, overflow: "hidden" }}>
+          <div key={s.id} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, marginBottom: 10, overflow: "hidden" }}>
             <button onClick={() => setExpanded(isOpen ? null : s.id)} style={{
               width: "100%", background: "none", border: "none", padding: "14px 16px",
               display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", color: C.text, textAlign: "left",

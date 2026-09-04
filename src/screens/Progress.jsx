@@ -97,7 +97,7 @@ export default function ProgressScreen({ sessions, allExercises, exercise, setEx
         prList.length === 0 ? <EmptyState text="Seus recordes de carga vão aparecer aqui conforme você treina." /> : (
           <div>
             {prList.map(([name, pr]) => (
-              <div key={name} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "14px 16px", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div key={name} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>{name}</div>
                   <div style={{ fontSize: 11.5, color: C.textDim, marginTop: 2 }}>{fmtDate(pr.date)} {pr.reps ? `· ${pr.reps} reps` : ""}</div>

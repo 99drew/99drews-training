@@ -61,7 +61,7 @@ export default function EditScreen({ plan, updatePlan, showToast }) {
       </div>
 
       {plan[day].exercises.map((e, idx) => (
-        <div key={e.id + idx} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "13px 15px", marginBottom: 9, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+        <div key={e.id + idx} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 15px", marginBottom: 9, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
           <div style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
             <ExerciseImage exercise={e} size={44} />
             <div style={{ minWidth: 0 }}>
