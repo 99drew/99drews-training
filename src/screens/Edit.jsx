@@ -42,7 +42,7 @@ export default function EditScreen({ plan, updatePlan, showToast }) {
   }
 
   function resetToDefault() {
-    updatePlan(DEFAULT_PLAN);
+    updatePlan(DEFAULT_PLAN, false);
     showToast("Plano restaurado para o padrão.");
   }
 

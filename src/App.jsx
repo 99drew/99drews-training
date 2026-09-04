@@ -31,18 +31,24 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [p, s, m, ph, d] = await Promise.all([
+      const [p, customized, s, m, ph, d] = await Promise.all([
         storeGet("customPlan", null),
+        storeGet("planCustomized", false),
         storeGet("sessions", []),
         storeGet("measurements", []),
         storeGet("photoIndex", []),
         storeGet("draft", null),
       ]);
-      setPlan(p || DEFAULT_PLAN);
+      // só usa o plano salvo se ele realmente foi editado por ela (add/editar/
+      // remover exercício) — sem isso, uma cópia salva do DEFAULT_PLAN antigo
+      // ficava presa pra sempre, escondendo qualquer atualização de exercícios
+      // feita no código (ex: troca de exercício por falta de equipamento).
+      const activePlan = customized && p ? p : DEFAULT_PLAN;
+      setPlan(activePlan);
       setSessions(s);
       setMeasurements(m);
       setPhotoIndex(ph);
-      setProgressExercise((p || DEFAULT_PLAN).A.exercises[0].name);
+      setProgressExercise(activePlan.A.exercises[0].name);
       // retoma um treino em andamento (ex: app foi recarregado ao voltar de
       // assistir um vídeo de execução e perdeu o estado em memória)
       if (d) { setDraft(d); setTab("log"); }
@@ -152,9 +158,19 @@ export default function App() {
     if (await storeSet("sessions", newSessions)) setSessions(newSessions);
   }
 
-  async function updatePlan(newPlan) {
+  // customized=false (usado só por "Restaurar plano original") apaga o
+  // plano salvo em vez de gravar uma cópia do DEFAULT_PLAN atual — assim
+  // ela volta a seguir o plano padrão do código, incluindo atualizações
+  // futuras, em vez de ficar presa numa foto do default de hoje.
+  async function updatePlan(newPlan, customized = true) {
     setPlan(newPlan);
-    await storeSet("customPlan", newPlan);
+    if (customized) {
+      await storeSet("customPlan", newPlan);
+      await storeSet("planCustomized", true);
+    } else {
+      await storeSet("customPlan", null);
+      await storeSet("planCustomized", false);
+    }
   }
 
   async function addMeasurement(entry) {
