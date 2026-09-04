@@ -10,7 +10,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
 export default function BodyScreen({ measurements, addMeasurement, deleteMeasurement, photoIndex, addPhoto, deletePhoto }) {
   const [section, setSection] = useState("medidas");
   return (
-    <div style={{ padding: "26px 20px" }}>
+    <div style={{ padding: "calc(26px + env(safe-area-inset-top)) 20px 26px" }}>
       <div className="disp" style={{ fontSize: 27, fontWeight: 600, marginBottom: 4 }}>Corpo</div>
       <div style={{ fontSize: 13, color: C.textDim, marginBottom: 18 }}>Medidas e fotos de progresso</div>
 

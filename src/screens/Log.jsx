@@ -58,8 +58,8 @@ export default function LogScreen({ draft, workout, updateSet, prMap, onCancel, 
   const doneSets = Object.values(draft.exercises).flat().filter((s) => s.done).length;
 
   return (
-    <div style={{ paddingBottom: timer ? 110 : 40, minHeight: "100vh" }}>
-      <div style={{ position: "sticky", top: 0, background: C.bg, zIndex: 10, padding: "20px 20px 14px", borderBottom: `1px solid ${C.border}` }}>
+    <div style={{ paddingBottom: timer ? 110 : 40, minHeight: "100dvh" }}>
+      <div style={{ position: "sticky", top: 0, background: C.bg, zIndex: 10, padding: "calc(20px + env(safe-area-inset-top)) 20px 14px", borderBottom: `1px solid ${C.border}` }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <button onClick={onCancel} style={{ background: "none", border: "none", color: C.textDim, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: 4 }}>
             <ChevronLeft size={20} /> <span style={{ fontSize: 14 }}>Cancelar</span>

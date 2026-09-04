@@ -4,7 +4,7 @@ import { StatCard } from "../components/Shared";
 
 export default function HomeScreen({ plan, sessions, suggestedNext, streak, prCount, onStart }) {
   return (
-    <div style={{ padding: "30px 20px 20px" }}>
+    <div style={{ padding: "calc(30px + env(safe-area-inset-top)) 20px 20px" }}>
       <div style={{ marginBottom: 26 }}>
         <div style={{ color: C.gold, fontSize: 12, fontWeight: 700, letterSpacing: 2 }}>SEU PROGRAMA</div>
         <div className="disp" style={{ fontSize: 32, fontWeight: 600, marginTop: 3 }}>Massa & Definição</div>

@@ -46,7 +46,7 @@ export default function EditScreen({ plan, updatePlan, showToast }) {
   }
 
   return (
-    <div style={{ padding: "26px 20px" }}>
+    <div style={{ padding: "calc(26px + env(safe-area-inset-top)) 20px 26px" }}>
       <div className="disp" style={{ fontSize: 27, fontWeight: 600, marginBottom: 4 }}>Editar treino</div>
       <div style={{ fontSize: 13, color: C.textDim, marginBottom: 18 }}>Personalize exercícios, séries e cargas-alvo</div>
 
@@ -84,7 +84,7 @@ export default function EditScreen({ plan, updatePlan, showToast }) {
 
       {adding && (
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 200, display: "flex", alignItems: "flex-end" }}>
-          <div style={{ background: C.surface2, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: "20px 20px calc(20px + env(safe-area-inset-bottom))", width: "100%", maxHeight: "85vh", overflowY: "auto" }}>
+          <div style={{ background: C.surface2, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: "20px 20px calc(20px + env(safe-area-inset-bottom))", width: "100%", maxHeight: "85dvh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
               <div style={{ fontSize: 16, fontWeight: 700 }}>{editingIdx !== null ? "Editar exercício" : "Novo exercício"}</div>
               <button onClick={() => setAdding(false)} style={{ background: "none", border: "none", color: C.textDim, cursor: "pointer" }}><X size={20} /></button>

@@ -6,7 +6,7 @@ import { EmptyState } from "../components/Shared";
 export default function HistoryScreen({ sessions, expanded, setExpanded, onDelete }) {
   const sorted = [...sessions].sort((a, b) => (a.date < b.date ? 1 : -1));
   return (
-    <div style={{ padding: "26px 20px" }}>
+    <div style={{ padding: "calc(26px + env(safe-area-inset-top)) 20px 26px" }}>
       <div className="disp" style={{ fontSize: 27, fontWeight: 600, marginBottom: 4 }}>Histórico</div>
       <div style={{ fontSize: 13, color: C.textDim, marginBottom: 18 }}>{sessions.length} treino{sessions.length !== 1 ? "s" : ""} registrado{sessions.length !== 1 ? "s" : ""}</div>
 

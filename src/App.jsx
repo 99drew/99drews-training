@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, Suspense, lazy } from "react";
 import { C, FONTS } from "./lib/theme";
 import { DEFAULT_PLAN, ROTATION } from "./lib/plan";
-import { todayISO, emptySets, uid } from "./lib/helpers";
+import { todayISO, lastSetsFor, seedSets, uid } from "./lib/helpers";
 import { storeGet, storeSet, photoSet, photoDelete } from "./lib/db";
 
 import HomeScreen from "./screens/Home";
@@ -29,20 +29,32 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      const [p, s, m, ph] = await Promise.all([
+      const [p, s, m, ph, d] = await Promise.all([
         storeGet("customPlan", null),
         storeGet("sessions", []),
         storeGet("measurements", []),
         storeGet("photoIndex", []),
+        storeGet("draft", null),
       ]);
       setPlan(p || DEFAULT_PLAN);
       setSessions(s);
       setMeasurements(m);
       setPhotoIndex(ph);
       setProgressExercise((p || DEFAULT_PLAN).A.exercises[0].name);
+      // retoma um treino em andamento (ex: app foi recarregado ao voltar de
+      // assistir um vídeo de execução e perdeu o estado em memória)
+      if (d) { setDraft(d); setTab("log"); }
       setLoading(false);
     })();
   }, []);
+
+  // salva o rascunho do treino em andamento a cada mudança, pra sobreviver
+  // a um recarregamento do app (ex: iOS derruba o PWA em segundo plano ao
+  // abrir o vídeo do exercício numa aba nova)
+  useEffect(() => {
+    if (loading) return;
+    storeSet("draft", draft);
+  }, [draft, loading]);
 
   function showToast(msg) {
     setToast(msg);
@@ -84,7 +96,7 @@ export default function App() {
 
   function startWorkout(key) {
     const exercises = {};
-    plan[key].exercises.forEach((exx) => { exercises[exx.name] = emptySets(exx); });
+    plan[key].exercises.forEach((exx) => { exercises[exx.name] = seedSets(exx, lastSetsFor(sessions, exx.name)); });
     setDraft({ workout: key, date: todayISO(), exercises });
     setTab("log");
   }
@@ -157,7 +169,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div style={{ background: C.bg, minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ background: C.bg, minHeight: "100dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{FONTS}</style>
         <div style={{ color: C.gold, fontFamily: "Fraunces, serif", fontSize: 18 }}>Carregando…</div>
       </div>
@@ -165,7 +177,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ background: C.bg, minHeight: "100vh", color: C.text, fontFamily: "Inter, sans-serif", paddingBottom: tab === "log" ? 0 : 88, position: "relative" }}>
+    <div style={{ background: C.bg, minHeight: "100dvh", color: C.text, fontFamily: "Inter, sans-serif", paddingBottom: tab === "log" ? 0 : 88, position: "relative" }}>
       <style>{FONTS}</style>
 
       {toast && (

@@ -34,7 +34,7 @@ export default function ProgressScreen({ sessions, allExercises, exercise, setEx
   const delta = last !== null && first !== null ? last - first : null;
 
   return (
-    <div style={{ padding: "26px 20px" }}>
+    <div style={{ padding: "calc(26px + env(safe-area-inset-top)) 20px 26px" }}>
       <div className="disp" style={{ fontSize: 27, fontWeight: 600, marginBottom: 4 }}>Progresso</div>
       <div style={{ fontSize: 13, color: C.textDim, marginBottom: 18 }}>{streak} treino{streak !== 1 ? "s" : ""} seguidos sem furar o ritmo</div>
 

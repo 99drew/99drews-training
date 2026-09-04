@@ -3,6 +3,30 @@ export function todayISO() { return new Date().toISOString().slice(0, 10); }
 export function fmtDate(iso) { return new Date(iso + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }); }
 export function fmtDateFull(iso) { return new Date(iso + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" }); }
 export function emptySets(exercise) { return Array.from({ length: exercise.sets }, () => ({ weight: "", reps: "", done: false })); }
+
+// Acha as séries do exercício na sessão registrada mais recente (sessions
+// vem em ordem cronológica, então percorre de trás pra frente).
+export function lastSetsFor(sessions, exerciseName) {
+  for (let i = sessions.length - 1; i >= 0; i--) {
+    const sets = sessions[i].exercises[exerciseName];
+    if (sets && sets.length) return sets;
+  }
+  return null;
+}
+
+// Pré-preenche carga/reps com o que foi feito da última vez nesse exercício
+// (por posição da série), mas sempre começa com "done: false" — os campos
+// continuam editáveis normalmente, é só o valor inicial.
+export function seedSets(exercise, lastSets) {
+  return Array.from({ length: exercise.sets }, (_, i) => {
+    const prev = lastSets && lastSets[i];
+    return {
+      weight: prev?.weight ? String(prev.weight) : "",
+      reps: prev?.reps ? String(prev.reps) : "",
+      done: false,
+    };
+  });
+}
 export function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
 export function beep() {
