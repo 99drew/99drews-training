@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, Timer, SkipForward, PlayCircle, Check, Trophy } from "lucide-react";
+import { ChevronLeft, Timer, SkipForward, PlayCircle, Check, Trophy, Info } from "lucide-react";
 import { C, inputStyle } from "../lib/theme";
 import { beep, uid } from "../lib/helpers";
 import { requestNotificationPermission, scheduleRestNotification, cancelRestNotification } from "../lib/notifications";
+import ExerciseImage from "../components/ExerciseImage";
 
 export default function LogScreen({ draft, workout, updateSet, prMap, onCancel, onSave }) {
   const [timer, setTimer] = useState(null); // { id, total, remaining, exName }
@@ -80,6 +81,12 @@ export default function LogScreen({ draft, workout, updateSet, prMap, onCancel, 
           width: "100%", background: C.primary, color: "#fff", border: "none", borderRadius: 14,
           padding: "16px 0", fontSize: 16, fontWeight: 700, cursor: "pointer", marginTop: 8,
         }}>Salvar treino de hoje</button>
+
+        {workout.exercises.some((e) => e.image) && (
+          <div style={{ fontSize: 10.5, color: C.textFaint, textAlign: "center", marginTop: 14 }}>
+            Imagens dos exercícios: wger.de (CC-BY-SA)
+          </div>
+        )}
       </div>
 
       {timer && <RestTimerBar timer={timer} onAddFifteen={addFifteen} onStop={stopTimer} />}
@@ -120,21 +127,41 @@ function RestTimerBar({ timer, onAddFifteen, onStop }) {
 }
 
 function ExerciseLogCard({ exercise, sets, pr, onChange, onToggleDone }) {
+  // sem recorde anterior = sem histórico nenhum ainda; se a 1ª série já
+  // veio preenchida (pela sugestão calculada a partir do peso corporal),
+  // mostra o aviso de que é só um ponto de partida.
+  const showSuggestionHint = !pr && Boolean(sets[0]?.weight) && !exercise.timed;
+
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 16, padding: 16, marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-        <div style={{ fontWeight: 700, fontSize: 15 }}>{exercise.name}</div>
-        <div style={{ fontSize: 11.5, color: C.textDim }}>{exercise.sets}x{exercise.reps}</div>
+      <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+        <ExerciseImage exercise={exercise} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>{exercise.name}</div>
+            <div style={{ fontSize: 11.5, color: C.textDim, whiteSpace: "nowrap" }}>{exercise.sets}x{exercise.reps}</div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+            {exercise.video && (
+              <a href={exercise.video} target="_blank" rel="noopener noreferrer" style={{
+                display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, color: C.gold, textDecoration: "none",
+                border: `1px solid ${C.border}`, borderRadius: 20, padding: "4px 10px 4px 8px", background: C.surface2,
+              }}><PlayCircle size={13} /> Ver execução</a>
+            )}
+            {pr && <span style={{ fontSize: 11, color: C.textFaint }}>recorde: {pr.weight}kg</span>}
+          </div>
+        </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-        {exercise.video && (
-          <a href={exercise.video} target="_blank" rel="noopener noreferrer" style={{
-            display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, color: C.gold, textDecoration: "none",
-            border: `1px solid ${C.border}`, borderRadius: 20, padding: "4px 10px 4px 8px", background: C.surface2,
-          }}><PlayCircle size={13} /> Ver execução</a>
-        )}
-        {pr && <span style={{ fontSize: 11, color: C.textFaint }}>recorde: {pr.weight}kg</span>}
-      </div>
+
+      {exercise.note && (
+        <div style={{
+          display: "flex", gap: 6, alignItems: "flex-start", fontSize: 11.5, color: C.textDim,
+          background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 10, padding: "8px 10px", marginBottom: 12,
+        }}>
+          <Info size={13} color={C.textFaint} style={{ flexShrink: 0, marginTop: 1 }} />
+          <span>{exercise.note}</span>
+        </div>
+      )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {sets.map((s, i) => {
@@ -164,6 +191,10 @@ function ExerciseLogCard({ exercise, sets, pr, onChange, onToggleDone }) {
           );
         })}
       </div>
+
+      {showSuggestionHint && (
+        <div style={{ fontSize: 10.5, color: C.textFaint, marginTop: 8 }}>Sugestão inicial — ajuste conforme sentir.</div>
+      )}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { Pencil, Trash2, Plus, RotateCcw, X } from "lucide-react";
 import { C, inputStyle } from "../lib/theme";
 import { ex, MUSCLES, DEFAULT_PLAN } from "../lib/plan";
 import { FieldLabel } from "../components/Shared";
+import ExerciseImage from "../components/ExerciseImage";
 
 function blankForm() { return { name: "", sets: 3, reps: "10-12", muscle: MUSCLES[0], rest: 60, video: "" }; }
 
@@ -60,17 +61,26 @@ export default function EditScreen({ plan, updatePlan, showToast }) {
       </div>
 
       {plan[day].exercises.map((e, idx) => (
-        <div key={e.id + idx} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "13px 15px", marginBottom: 9, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700 }}>{e.name}</div>
-            <div style={{ fontSize: 11.5, color: C.textDim, marginTop: 2 }}>{e.sets}x{e.reps} · {e.muscle} · descanso {e.rest}s</div>
+        <div key={e.id + idx} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 14, padding: "13px 15px", marginBottom: 9, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", minWidth: 0 }}>
+            <ExerciseImage exercise={e} size={44} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>{e.name}</div>
+              <div style={{ fontSize: 11.5, color: C.textDim, marginTop: 2 }}>{e.sets}x{e.reps} · {e.muscle} · descanso {e.rest}s</div>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 4 }}>
+          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
             <button onClick={() => openEdit(idx)} style={{ background: "none", border: "none", color: C.gold, cursor: "pointer", padding: 6 }}><Pencil size={15} /></button>
             <button onClick={() => removeExercise(idx)} style={{ background: "none", border: "none", color: C.textFaint, cursor: "pointer", padding: 6 }}><Trash2 size={15} /></button>
           </div>
         </div>
       ))}
+
+      {plan[day].exercises.some((e) => e.image) && (
+        <div style={{ fontSize: 10.5, color: C.textFaint, textAlign: "center", marginTop: 10 }}>
+          Imagens dos exercícios: wger.de (CC-BY-SA)
+        </div>
+      )}
 
       <button onClick={openAdd} style={{
         width: "100%", background: C.surface2, border: `1px dashed ${C.border}`, color: C.text, borderRadius: 12,

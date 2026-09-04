@@ -15,6 +15,8 @@ import BottomNav from "./components/BottomNav";
 const ProgressScreen = lazy(() => import("./screens/Progress"));
 const BodyScreen = lazy(() => import("./screens/Body"));
 
+const DEFAULT_BODY_WEIGHT = 55;
+
 export default function App() {
   const [tab, setTab] = useState("home");
   const [loading, setLoading] = useState(true);
@@ -63,6 +65,16 @@ export default function App() {
 
   const allExercises = useMemo(() => Object.values(plan).flatMap((w) => w.exercises), [plan]);
 
+  // peso corporal mais recente registrado em Corpo > Medidas, usado pra
+  // calcular a sugestão de carga inicial; 55kg é o padrão dela até ela
+  // registrar a primeira medida.
+  const bodyWeight = useMemo(() => {
+    const withWeight = measurements.filter((m) => m.weight);
+    if (!withWeight.length) return DEFAULT_BODY_WEIGHT;
+    const latest = [...withWeight].sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+    return parseFloat(latest.weight) || DEFAULT_BODY_WEIGHT;
+  }, [measurements]);
+
   const prMap = useMemo(() => {
     const map = {};
     sessions.forEach((s) => {
@@ -96,7 +108,7 @@ export default function App() {
 
   function startWorkout(key) {
     const exercises = {};
-    plan[key].exercises.forEach((exx) => { exercises[exx.name] = seedSets(exx, lastSetsFor(sessions, exx.name)); });
+    plan[key].exercises.forEach((exx) => { exercises[exx.name] = seedSets(exx, lastSetsFor(sessions, exx.name), bodyWeight); });
     setDraft({ workout: key, date: todayISO(), exercises });
     setTab("log");
   }
