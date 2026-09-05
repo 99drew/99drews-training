@@ -6,6 +6,14 @@ import { photoSet, photoGetURL } from "../lib/db";
 
 const AVATAR_ID = "profile-avatar";
 
+const MEASUREMENT_FIELDS = [
+  { key: "weight", label: "Peso", unit: "kg" },
+  { key: "waist", label: "Cintura", unit: "cm" },
+  { key: "hip", label: "Quadril", unit: "cm" },
+  { key: "arm", label: "Braço", unit: "cm" },
+  { key: "thigh", label: "Coxa", unit: "cm" },
+];
+
 function useAvatarURL() {
   const [src, setSrc] = useState(null);
   useEffect(() => {
@@ -41,7 +49,18 @@ export default function ProfileScreen({ profile, updateProfile, bodyWeight, meas
   }
 
   const sorted = [...measurements].sort((a, b) => (a.date < b.date ? 1 : -1));
-  const latest = sorted[0];
+
+  // cada medida (peso, cintura, quadril...) pode ter sido registrada num dia
+  // diferente — pega o valor mais recente de cada campo individualmente, em
+  // vez de só os campos preenchidos no último registro (senão um registro
+  // recente só de peso escondia cintura/quadril/braço/coxa de dias antigos).
+  const latestFields = MEASUREMENT_FIELDS
+    .map((f) => {
+      const withField = sorted.filter((m) => m[f.key]);
+      return withField.length ? { ...f, value: withField[0][f.key], date: withField[0].date } : null;
+    })
+    .filter(Boolean);
+  const latestWeight = latestFields.find((f) => f.key === "weight");
 
   function saveHeight() {
     const v = parseFloat(String(heightDraft).replace(",", "."));
@@ -70,9 +89,9 @@ export default function ProfileScreen({ profile, updateProfile, bodyWeight, meas
             ? <img src={avatarSrc} alt="Cindy Santos" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             : <User size={28} color={C.textFaint} style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }} />}
           <div style={{
-            position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%",
+            position: "absolute", bottom: -2, right: -2, width: 26, height: 26, borderRadius: "50%",
             background: C.primary, border: `2px solid ${C.bg}`, display: "flex", alignItems: "center", justifyContent: "center",
-          }}><Camera size={11} color="#fff" /></div>
+          }}><Camera size={14} color="#fff" strokeWidth={2.5} /></div>
         </button>
         <div>
           <div style={{ fontSize: 16, fontWeight: 700 }}>Cindy Santos</div>
@@ -81,7 +100,7 @@ export default function ProfileScreen({ profile, updateProfile, bodyWeight, meas
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-        <StatBlock label="Peso atual" value={bodyWeight ? `${bodyWeight}kg` : "—"} hint={latest?.weight ? `registrado em ${fmtDateFull(latest.date)}` : "peso padrão"} />
+        <StatBlock label="Peso atual" value={bodyWeight ? `${bodyWeight}kg` : "—"} hint={latestWeight ? `registrado em ${fmtDateFull(latestWeight.date)}` : "peso padrão"} />
         <StatBlock
           label="Altura"
           value={profile.height ? `${profile.height}cm` : "—"}
@@ -103,20 +122,20 @@ export default function ProfileScreen({ profile, updateProfile, bodyWeight, meas
       )}
 
       <div style={{ fontSize: 12, fontWeight: 700, color: C.textDim, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.4 }}>Últimas medidas</div>
-      {latest ? (
-        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "13px 15px", marginBottom: 16 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, marginBottom: 6 }}>{fmtDateFull(latest.date)}</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {[
-              latest.weight && `Peso ${latest.weight}kg`,
-              latest.waist && `Cintura ${latest.waist}cm`,
-              latest.hip && `Quadril ${latest.hip}cm`,
-              latest.arm && `Braço ${latest.arm}cm`,
-              latest.thigh && `Coxa ${latest.thigh}cm`,
-            ].filter(Boolean).map((t) => (
-              <span key={t} style={{ fontSize: 11.5, background: C.surface2, borderRadius: 999, padding: "4px 10px", color: C.textDim }}>{t}</span>
-            ))}
-          </div>
+      {latestFields.length ? (
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "6px 15px", marginBottom: 16 }}>
+          {latestFields.map((f, i) => (
+            <div key={f.key} style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0",
+              borderTop: i > 0 ? `1px solid ${C.border}` : "none",
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{f.label}</div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 14, fontWeight: 700 }}>{f.value}{f.unit}</div>
+                <div style={{ fontSize: 10.5, color: C.textFaint }}>{fmtDateFull(f.date)}</div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div style={{ border: `1px dashed ${C.border}`, borderRadius: 12, padding: "20px 16px", textAlign: "center", color: C.textDim, fontSize: 13, marginBottom: 16 }}>
