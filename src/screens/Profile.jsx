@@ -1,12 +1,44 @@
-import { useState } from "react";
-import { Pencil, Check, Info } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Pencil, Check, Camera, User } from "lucide-react";
 import { C, inputStyle } from "../lib/theme";
-import { fmtDateFull } from "../lib/helpers";
-import avatar from "../img/avatar.jpg";
+import { fmtDateFull, resizeImage } from "../lib/helpers";
+import { photoSet, photoGetURL } from "../lib/db";
+
+const AVATAR_ID = "profile-avatar";
+
+function useAvatarURL() {
+  const [src, setSrc] = useState(null);
+  useEffect(() => {
+    let url = null;
+    let cancelled = false;
+    photoGetURL(AVATAR_ID).then((u) => {
+      if (cancelled) { if (u) URL.revokeObjectURL(u); return; }
+      url = u;
+      setSrc(u);
+    });
+    return () => {
+      cancelled = true;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, []);
+  return [src, setSrc];
+}
 
 export default function ProfileScreen({ profile, updateProfile, bodyWeight, measurements }) {
   const [editingHeight, setEditingHeight] = useState(false);
   const [heightDraft, setHeightDraft] = useState(profile.height || "");
+  const [avatarSrc, setAvatarSrc] = useAvatarURL();
+  const fileRef = useRef(null);
+
+  async function handleAvatarFile(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const blob = await resizeImage(file, 400, 0.8);
+    const ok = await photoSet(AVATAR_ID, blob);
+    e.target.value = "";
+    if (!ok) return;
+    setAvatarSrc((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(blob); });
+  }
 
   const sorted = [...measurements].sort((a, b) => (a.date < b.date ? 1 : -1));
   const latest = sorted[0];
@@ -29,7 +61,19 @@ export default function ProfileScreen({ profile, updateProfile, bodyWeight, meas
         display: "flex", alignItems: "center", gap: 14, background: C.surface, border: `1px solid ${C.border}`,
         borderRadius: 12, padding: 16, marginBottom: 16,
       }}>
-        <img src={avatar} alt="Cindy Santos" style={{ width: 64, height: 64, borderRadius: "50%", objectFit: "cover", border: `1px solid ${C.border}` }} />
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleAvatarFile} style={{ display: "none" }} />
+        <button onClick={() => fileRef.current?.click()} style={{
+          position: "relative", width: 64, height: 64, borderRadius: "50%", flexShrink: 0, padding: 0,
+          border: `1px solid ${C.border}`, background: C.surface2, cursor: "pointer", overflow: "hidden",
+        }}>
+          {avatarSrc
+            ? <img src={avatarSrc} alt="Cindy Santos" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            : <User size={28} color={C.textFaint} style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)" }} />}
+          <div style={{
+            position: "absolute", bottom: 0, right: 0, width: 22, height: 22, borderRadius: "50%",
+            background: C.primary, border: `2px solid ${C.bg}`, display: "flex", alignItems: "center", justifyContent: "center",
+          }}><Camera size={11} color="#fff" /></div>
+        </button>
         <div>
           <div style={{ fontSize: 16, fontWeight: 700 }}>Cindy Santos</div>
           <div style={{ fontSize: 12, color: C.textDim, marginTop: 2 }}>Massa & Definição</div>
@@ -79,17 +123,6 @@ export default function ProfileScreen({ profile, updateProfile, bodyWeight, meas
           Nenhuma medida registrada ainda. Adicione em Corpo → Medidas.
         </div>
       )}
-
-      <div style={{
-        display: "flex", gap: 10, background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14,
-      }}>
-        <Info size={16} color={C.textDim} style={{ flexShrink: 0, marginTop: 1 }} />
-        <div style={{ fontSize: 12, color: C.textDim, lineHeight: 1.5 }}>
-          <b style={{ color: C.text }}>Sobre o app Saúde (Apple):</b> como este app roda direto no navegador (PWA), ele não
-          tem acesso ao HealthKit — isso é uma restrição da Apple, só apps nativos da App Store podem sincronizar com o
-          Saúde. Por enquanto os dados ficam só aqui, salvos no aparelho, com preenchimento manual.
-        </div>
-      </div>
     </div>
   );
 }
