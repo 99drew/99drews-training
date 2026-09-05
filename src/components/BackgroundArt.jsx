@@ -1,9 +1,14 @@
 // Fundo decorativo consolidado com o portfólio: mesmos blobs em gradiente
 // rosa→roxo→azul + feixes de linhas onduladas, gerados em SVG (sem imagem
-// rasterizada). Portado de src/components/backgroundArt.js — mesma lógica,
-// adaptado pra ficar fixo atrás do conteúdo (o app é um SPA com nav fixa,
-// não uma página única rolando), então usa position:fixed em vez de
-// absolute pra continuar atrás mesmo quando uma tela rola por dentro.
+// rasterizada). Portado de src/components/backgroundArt.js — mesma lógica.
+//
+// Usa position:absolute (igual ao portfólio), não fixed: a combinação
+// position:fixed + filter:blur em elementos descendentes tem um bug
+// conhecido no WebKit/iOS (o blur falha e mostra o SVG cru, com listras
+// e desalinhamento horizontal) — reproduzido no aparelho real da Cindy.
+// Como absolute, o fundo rola junto com o conteúdo em telas mais altas
+// que a viewport, revelando o navy sólido (C.bg) por baixo — troca
+// aceitável por não quebrar o rendering no Safari.
 
 function mulberry32(seed) {
   let s = seed;
@@ -118,7 +123,7 @@ function BlobCluster({ cfg }) {
 
 export default function BackgroundArt() {
   return (
-    <div aria-hidden="true" style={{ position: "fixed", inset: 0, overflow: "hidden", zIndex: 0, pointerEvents: "none" }}>
+    <div aria-hidden="true" style={{ position: "absolute", top: 0, left: 0, right: 0, height: "100dvh", overflow: "hidden", zIndex: 0, pointerEvents: "none" }}>
       {CLUSTERS.map((cfg) => <BlobCluster key={cfg.seed} cfg={cfg} />)}
     </div>
   );
