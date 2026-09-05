@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, Timer, SkipForward, PlayCircle, Check, Trophy, Info } from "lucide-react";
+import { ChevronLeft, Timer, SkipForward, PlayCircle, Check, Trophy, Info, Activity } from "lucide-react";
 import { C, inputStyle } from "../lib/theme";
 import { beep, uid } from "../lib/helpers";
 import { requestNotificationPermission, scheduleRestNotification, cancelRestNotification } from "../lib/notifications";
 import ExerciseImage from "../components/ExerciseImage";
 
-export default function LogScreen({ draft, workout, updateSet, prMap, onCancel, onSave }) {
+export default function LogScreen({ draft, workout, updateSet, onUpdateCardio, prMap, onCancel, onSave }) {
   const [timer, setTimer] = useState(null); // { id, total, remaining, exName }
   const intervalRef = useRef(null);
   const askedPermission = useRef(false);
@@ -77,6 +77,9 @@ export default function LogScreen({ draft, workout, updateSet, prMap, onCancel, 
             onChange={(idx, field, value) => updateSet(exx.name, idx, field, value)}
             onToggleDone={(idx, next) => handleToggle(exx, idx, next)} />
         ))}
+
+        <CardioCard cardio={draft.cardio} onUpdateCardio={onUpdateCardio} />
+
         <button onClick={onSave} style={{
           width: "100%", background: C.primary, color: "#fff", border: "none", borderRadius: 14,
           padding: "16px 0", fontSize: 16, fontWeight: 700, cursor: "pointer", marginTop: 8,
@@ -195,6 +198,54 @@ function ExerciseLogCard({ exercise, sets, pr, onChange, onToggleDone }) {
       {showSuggestionHint && (
         <div style={{ fontSize: 10.5, color: C.textFaint, marginTop: 8 }}>Sugestão inicial — ajuste conforme sentir.</div>
       )}
+    </div>
+  );
+}
+
+// Cardio (esteira/bicicleta) é opcional e independente da musculação — não
+// participa de séries/PR/sugestão de carga, só fica salvo junto no rascunho.
+function CardioCard({ cardio, onUpdateCardio }) {
+  const equipamento = cardio?.equipamento || "";
+  const duracao = cardio?.duracao || "";
+  const intensidade = cardio?.intensidade || "";
+
+  return (
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 14 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginBottom: 12 }}>
+        <Activity size={15} color={C.primary} style={{ alignSelf: "center" }} />
+        <div style={{ fontWeight: 700, fontSize: 14 }}>Cardio</div>
+        <span style={{ fontSize: 10.5, color: C.textFaint }}>(opcional)</span>
+      </div>
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+        {["Esteira", "Bicicleta"].map((opt) => (
+          <button key={opt} onClick={() => onUpdateCardio("equipamento", equipamento === opt ? "" : opt)} style={{
+            flex: 1, padding: "9px 0", borderRadius: 9, fontSize: 12.5, fontWeight: 600, cursor: "pointer",
+            border: `1px solid ${equipamento === opt ? C.primary : C.border}`,
+            background: equipamento === opt ? C.primaryDim : C.surface2, color: C.text,
+          }}>{opt}</button>
+        ))}
+      </div>
+
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 11, color: C.textDim, marginBottom: 5, fontWeight: 600 }}>Duração (minutos)</div>
+        <input type="number" inputMode="numeric" placeholder="ex: 15" value={duracao}
+          onChange={(e) => onUpdateCardio("duracao", e.target.value)} style={inputStyle(1)} />
+      </div>
+
+      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+        {["leve", "moderada", "intensa"].map((opt) => (
+          <button key={opt} onClick={() => onUpdateCardio("intensidade", intensidade === opt ? "" : opt)} style={{
+            flex: 1, padding: "7px 0", borderRadius: 9, fontSize: 11.5, textTransform: "capitalize", cursor: "pointer",
+            border: `1px solid ${intensidade === opt ? C.primary : C.border}`,
+            background: intensidade === opt ? C.primaryDim : "transparent", color: C.text,
+          }}>{opt}</button>
+        ))}
+      </div>
+
+      <div style={{ fontSize: 10.5, color: C.textFaint, lineHeight: 1.4 }}>
+        5-10 min leve como aquecimento, ou 15-20 min moderado no final como queima extra.
+      </div>
     </div>
   );
 }

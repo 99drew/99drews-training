@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Trash2, Activity } from "lucide-react";
 import { C } from "../lib/theme";
 import { fmtDate } from "../lib/helpers";
 import { EmptyState } from "../components/Shared";
@@ -41,6 +41,16 @@ export default function HistoryScreen({ sessions, expanded, setExpanded, onDelet
                     </div>
                   </div>
                 ))}
+                {s.cardio?.duracao && (
+                  <div style={{ background: C.surface2, borderRadius: 10, padding: "10px 12px", marginBottom: 4 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600, marginBottom: 3 }}>
+                      <Activity size={13} color={C.primary} /> Cardio
+                    </div>
+                    <div style={{ fontSize: 12, color: C.textDim }}>
+                      {[s.cardio.equipamento, `${s.cardio.duracao} min`, s.cardio.intensidade].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                )}
                 <button onClick={() => onDelete(s.id)} style={{ marginTop: 6, background: "none", border: "none", color: C.primary, fontSize: 12.5, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", padding: "6px 0" }}>
                   <Trash2 size={13} /> Excluir registro
                 </button>

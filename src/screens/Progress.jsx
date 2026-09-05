@@ -1,8 +1,8 @@
 import { useState, useMemo } from "react";
-import { Dumbbell, TrendingUp, Trophy } from "lucide-react";
+import { Dumbbell, TrendingUp, Trophy, Activity } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { C } from "../lib/theme";
-import { fmtDate } from "../lib/helpers";
+import { fmtDate, todayISO } from "../lib/helpers";
 import { StatCard, EmptyState, ChartCard, tooltipStyle } from "../components/Shared";
 
 export default function ProgressScreen({ sessions, allExercises, exercise, setExercise, prMap, streak }) {
@@ -28,6 +28,21 @@ export default function ProgressScreen({ sessions, allExercises, exercise, setEx
     return Object.entries(byMuscle).map(([muscle, volume]) => ({ muscle, volume: Math.round(volume) })).sort((a, b) => b.volume - a.volume);
   }, [sessions, allExercises]);
 
+  // minutos de cardio (esteira/bicicleta) nos últimos 7 e 30 dias, contando
+  // a partir de hoje — janela corrida, não semana/mês de calendário.
+  const cardioMinutes = useMemo(() => {
+    const today = new Date(todayISO() + "T00:00:00");
+    let week = 0, month = 0;
+    sessions.forEach((s) => {
+      const mins = parseFloat(s.cardio?.duracao) || 0;
+      if (!mins) return;
+      const daysAgo = (today - new Date(s.date + "T00:00:00")) / 86400000;
+      if (daysAgo < 7) week += mins;
+      if (daysAgo < 30) month += mins;
+    });
+    return { week, month };
+  }, [sessions]);
+
   const prList = Object.entries(prMap).sort((a, b) => (a[1].date < b[1].date ? 1 : -1));
   const last = exerciseData.length ? exerciseData[exerciseData.length - 1].weight : null;
   const first = exerciseData.length ? exerciseData[0].weight : null;
@@ -37,6 +52,13 @@ export default function ProgressScreen({ sessions, allExercises, exercise, setEx
     <div style={{ padding: "calc(26px + env(safe-area-inset-top)) 20px 26px" }}>
       <div className="disp" style={{ fontSize: 27, fontWeight: 600, marginBottom: 4 }}>Progresso</div>
       <div style={{ fontSize: 13, color: C.textDim, marginBottom: 18 }}>{streak} treino{streak !== 1 ? "s" : ""} seguidos sem furar o ritmo</div>
+
+      {(cardioMinutes.week > 0 || cardioMinutes.month > 0) && (
+        <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+          <StatCard icon={<Activity size={17} color={C.primary} />} value={`${cardioMinutes.week} min`} label="cardio nos últimos 7 dias" />
+          <StatCard icon={<Activity size={17} color={C.gold} />} value={`${cardioMinutes.month} min`} label="cardio nos últimos 30 dias" />
+        </div>
+      )}
 
       <div style={{ display: "flex", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 4, marginBottom: 20 }}>
         {[["exercicio", "Exercício"], ["musculo", "Grupo muscular"], ["recordes", "Recordes"]].map(([k, label]) => (

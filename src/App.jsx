@@ -134,6 +134,12 @@ export default function App() {
     });
   }
 
+  // cardio (esteira/bicicleta) é opcional — fica junto do resto do rascunho,
+  // então nem precisa de tratamento especial no saveSession pra persistir.
+  function updateCardio(field, value) {
+    setDraft((d) => ({ ...d, cardio: { ...d.cardio, [field]: value } }));
+  }
+
   async function saveSession() {
     if (!draft) return;
     const newPRs = [];
@@ -234,7 +240,7 @@ export default function App() {
         )}
 
         {tab === "log" && draft && (
-          <LogScreen draft={draft} workout={plan[draft.workout]} updateSet={updateSet} prMap={prMap}
+          <LogScreen draft={draft} workout={plan[draft.workout]} updateSet={updateSet} onUpdateCardio={updateCardio} prMap={prMap}
             onCancel={() => { setDraft(null); setTab("home"); }} onSave={saveSession} />
         )}
 
