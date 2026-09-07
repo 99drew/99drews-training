@@ -1,10 +1,14 @@
-# Treino — Massa & Definição (PWA)
+# 99drew's Training (PWA)
 
 App pessoal de treino: plano A/B/C, registro de séries com cronômetro de descanso,
 progresso (cargas + volume por grupo muscular + recordes), medidas corporais e fotos
 de evolução. Migrado do protótipo em artifact do claude.ai pra um PWA instalável de
 verdade — mesma UI, mesma lógica, mesmas cores, agora rodando offline, com dados
 persistidos no aparelho e notificação real de cronômetro.
+
+> Este repositório era originalmente a pasta `treino-app/` (depois `99drews-training/`)
+> dentro do repositório do portfólio (`99drew/99drew.github.io`) e foi separado pra cá
+> como projeto independente. O histórico de commits foi preservado na migração.
 
 ## Rodando localmente
 
@@ -13,8 +17,8 @@ npm install
 npm run dev
 ```
 
-Abre em `http://localhost:5173/treino/` (o `base` do Vite já está configurado pra
-`/treino/`, igual à URL de produção — ver "Deploy" abaixo).
+Abre em `http://localhost:5173/99drews-training/` (o `base` do Vite já está
+configurado pra `/99drews-training/`, igual à URL de produção — ver "Deploy" abaixo).
 
 ```bash
 npm run build     # gera dist/
@@ -74,11 +78,11 @@ precisa escolher um ou outro.
 3. Implante a pasta [`/server`](./server) como um projeto Vercel separado (é só
    funções serverless, `vercel deploy` dentro de `server/` resolve). Configure as
    variáveis de ambiente do projeto Vercel com base em [`server/.env.example`](./server/.env.example).
-4. No build do `treino-app`, defina `VITE_PUSH_SERVER_URL` (a URL do projeto Vercel
-   do passo 3) e `VITE_VAPID_PUBLIC_KEY` (a chave pública gerada no passo 1) — ver
+4. Defina `VITE_PUSH_SERVER_URL` (a URL do projeto Vercel do passo 3) e
+   `VITE_VAPID_PUBLIC_KEY` (a chave pública gerada no passo 1) — ver
    [`.env.example`](./.env.example). Sem essas duas variáveis, o app não tenta usar
    push real e segue só no melhor esforço.
-5. Rebuild e reimplante o `treino-app`.
+5. Rebuild e reimplante.
 
 ## Persistência de dados
 
@@ -97,15 +101,19 @@ adicionaria login, sincronização de conflitos e mais uma peça de infra pra ma
 vale o custo se a perda de dados por troca de aparelho virar um problema de verdade.
 Dá pra pedir esse próximo passo quando fizer sentido.
 
+O nome do banco IndexedDB em `src/lib/db.js` (`DB_NAME = "treino-app"`) continua com
+o nome original do projeto, de propósito: é só um identificador técnico interno,
+invisível no uso normal, e trocá-lo faria o navegador abrir um banco novo e vazio —
+apagando na prática todo o histórico de treinos, medidas, fotos e avatar já salvos no
+aparelho.
+
 ## Deploy
 
-O workflow [`../.github/workflows/deploy-treino.yml`](../.github/workflows/deploy-treino.yml)
-publica automaticamente em **`https://99drew.github.io/treino/`** a cada push em
-`main` que toque em `treino-app/**` (reaproveita o GitHub Pages que já serve o
-portfólio na raiz do mesmo repositório, sem mexer no workflow existente — usa
-`destination_dir: treino` + `keep_files: true` pra só tocar nessa subpasta do branch
-`gh-pages`). HTTPS já vem de graça do GitHub Pages, que é obrigatório pra
-Service Worker e Notification API funcionarem.
+O workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) publica
+automaticamente em **`https://99drew.github.io/99drews-training/`** a cada push em
+`main` (GitHub Pages deste repositório, independente do repositório do portfólio).
+HTTPS já vem de graça do GitHub Pages, que é obrigatório pra Service Worker e
+Notification API funcionarem.
 
 Isso cobre instalação, offline e a notificação de melhor esforço (caminhos 1 e 2
 acima) sem precisar de conta em nenhum serviço além do GitHub. Pra notificação
@@ -113,9 +121,23 @@ confiável com tela bloqueada, ver "Ativando o Web Push real" acima — isso exi
 projeto à parte na Vercel (ou outro host com serverless functions), porque GitHub
 Pages é só arquivos estáticos.
 
+### Mudou de endereço (migração do repositório do portfólio)
+
+Esse app morava em `99drew/99drew.github.io`, na URL `https://99drew.github.io/treino/`.
+Como agora é um repositório próprio, a URL de produção mudou pra
+`https://99drew.github.io/99drews-training/` — não dá pra manter o mesmo path num
+repositório diferente. Na prática:
+
+- **Nenhum dado é perdido.** IndexedDB (histórico de treinos, medidas, fotos, avatar)
+  é isolado por origem (`https://99drew.github.io`), não por path — continua tudo lá,
+  visível em qualquer URL sob esse domínio.
+- **O ícone antigo na Tela de Início do iPhone para de funcionar** (ele aponta pro
+  path antigo, que não existe mais). Precisa refazer "Adicionar à Tela de Início" uma
+  vez apontando pra URL nova — ver abaixo.
+
 ### Instalando no iPhone
 
-1. Abrir `https://99drew.github.io/treino/` no Safari.
+1. Abrir `https://99drew.github.io/99drews-training/` no Safari.
 2. Compartilhar → **Adicionar à Tela de Início**.
 3. Abrir pelo ícone da Tela de Início (não pelo Safari) — só assim conta como PWA
    instalada e o `display: standalone` entra em vigor (tela cheia, sem barra do

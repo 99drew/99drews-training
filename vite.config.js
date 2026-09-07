@@ -2,8 +2,8 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
-// Publicado em https://99drew.github.io/treino/ — ver .github/workflows/deploy-treino.yml
-const BASE = "/treino/";
+// Publicado em https://99drew.github.io/99drews-training/ — ver .github/workflows/deploy.yml
+const BASE = "/99drews-training/";
 
 export default defineConfig({
   base: BASE,
@@ -16,8 +16,8 @@ export default defineConfig({
       injectRegister: false, // registro manual em src/main.jsx (precisa do retorno do updateSW)
       manifest: {
         id: BASE,
-        name: "Treino — Massa & Definição",
-        short_name: "Treino",
+        name: "99drew's Training",
+        short_name: "Training",
         description: "App pessoal de treino: registro de séries, cronômetro de descanso, progresso e fotos de evolução.",
         start_url: BASE,
         scope: BASE,
