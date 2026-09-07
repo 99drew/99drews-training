@@ -1,14 +1,26 @@
-import { Flame, Dumbbell, Trophy, ChevronRight } from "lucide-react";
+import { Flame, Dumbbell, Trophy, ChevronRight, BellRing } from "lucide-react";
 import { C } from "../lib/theme";
 import { StatCard } from "../components/Shared";
 
-export default function HomeScreen({ plan, sessions, suggestedNext, streak, prCount, onStart }) {
+export default function HomeScreen({ plan, sessions, suggestedNext, streak, prCount, daysSinceLast, onStart }) {
   return (
     <div style={{ padding: "calc(30px + env(safe-area-inset-top)) 20px 20px" }}>
       <div style={{ marginBottom: 26 }}>
         <div style={{ color: C.gold, fontSize: 12, fontWeight: 700, letterSpacing: 2 }}>SEU PROGRAMA</div>
         <div className="disp" style={{ fontSize: 32, fontWeight: 600, marginTop: 3 }}>Massa & Definição</div>
       </div>
+
+      {daysSinceLast !== null && daysSinceLast >= 3 && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10, background: C.surface, border: `1px solid ${C.gold}`,
+          borderRadius: 12, padding: "12px 14px", marginBottom: 20,
+        }}>
+          <BellRing size={17} color={C.gold} style={{ flexShrink: 0 }} />
+          <div style={{ fontSize: 12.5, color: C.text }}>
+            Já se passaram <strong>{daysSinceLast} dias</strong> desde o último treino — bora manter o ritmo?
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "flex", gap: 10, marginBottom: 26 }}>
         <StatCard icon={<Flame size={17} color={C.gold} />} value={streak} label="sequência" />
