@@ -154,7 +154,7 @@ src/
   components/     peças de UI reutilizadas entre telas (StatCard, BottomNav, etc.)
   screens/        uma tela por arquivo (Home, Log, History, Progress, Body, Edit)
   sw.js           Service Worker customizado (cache offline + notificações)
-scripts/          geração dos ícones do PWA (SVG → PNG via sharp)
+scripts/          geração dos ícones e das splash screens do PWA (SVG → PNG via sharp)
 server/           funções serverless opcionais pro Web Push real (deploy separado)
 ```
 
@@ -168,8 +168,5 @@ server/           funções serverless opcionais pro Web Push real (deploy separ
   bloqueada no Safari iOS **precisa ser confirmado num iPhone real** depois do
   deploy — é justamente o tipo de comportamento que varia entre versões do iOS e não
   dá pra simular fora do aparelho.
-- Splash screen customizada (imagem de carregamento antes do app abrir) não foi
-  implementada — o iOS gera uma a partir do ícone/cor de fundo automaticamente, mas
-  uma splash desenhada à mão (por tamanho de tela) é um possível próximo passo.
 - O servidor de Web Push (`/server`) está com o código completo mas **não implantado**
   — precisa das suas próprias chaves/contas, ver "Ativando o Web Push real" acima.
