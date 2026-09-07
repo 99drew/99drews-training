@@ -67,6 +67,8 @@ export default function HistoryScreen({ sessions, expanded, setExpanded, onDelet
                                 onChange={(e) => updateEditSet(name, i, "weight", e.target.value)} style={inputStyle()} />
                               <input type="number" inputMode="numeric" placeholder="reps" value={set.reps}
                                 onChange={(e) => updateEditSet(name, i, "reps", e.target.value)} style={inputStyle()} />
+                              <input type="number" inputMode="numeric" placeholder="RPE" min="1" max="10" value={set.rpe || ""}
+                                onChange={(e) => updateEditSet(name, i, "rpe", e.target.value)} style={inputStyle(0.65)} />
                             </div>
                           ))}
                         </div>
@@ -74,7 +76,7 @@ export default function HistoryScreen({ sessions, expanded, setExpanded, onDelet
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                           {sets.map((set, i) => (
                             <span key={i} style={{ fontSize: 12, background: C.surface2, borderRadius: 8, padding: "4px 8px", color: set.done ? C.text : C.textDim }}>
-                              {set.weight ? `${set.weight}kg` : ""} {set.reps ? `x${set.reps}` : "—"}
+                              {set.weight ? `${set.weight}kg` : ""} {set.reps ? `x${set.reps}` : "—"}{set.rpe ? ` · RPE ${set.rpe}` : ""}
                             </span>
                           ))}
                         </div>

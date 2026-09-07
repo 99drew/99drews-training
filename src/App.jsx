@@ -171,6 +171,26 @@ export default function App() {
     });
   }
 
+  // Séries de aquecimento existem só durante o treino em andamento — ficam
+  // misturadas no mesmo array de sets (marcadas com warmup:true), sempre
+  // antes das séries de trabalho, mas são removidas antes de salvar (ver
+  // saveSession): não contam pra recorde, volume ou histórico.
+  function addWarmupSet(name) {
+    setDraft((d) => {
+      const sets = d.exercises[name].slice();
+      const insertAt = sets.filter((s) => s.warmup).length;
+      sets.splice(insertAt, 0, { weight: "", reps: "", done: false, warmup: true });
+      return { ...d, exercises: { ...d.exercises, [name]: sets } };
+    });
+  }
+
+  function removeWarmupSet(name, idx) {
+    setDraft((d) => ({
+      ...d,
+      exercises: { ...d.exercises, [name]: d.exercises[name].filter((_, i) => i !== idx) },
+    }));
+  }
+
   // cardio (esteira/bicicleta) é opcional — fica junto do resto do rascunho,
   // então nem precisa de tratamento especial no saveSession pra persistir.
   function updateCardio(field, value) {
@@ -179,8 +199,14 @@ export default function App() {
 
   async function saveSession() {
     if (!draft) return;
-    const newPRs = [];
+    // aquecimento é só um apoio durante o treino — não entra no registro
+    // salvo (não conta pra recorde, volume ou histórico).
+    const workExercises = {};
     Object.entries(draft.exercises).forEach(([name, sets]) => {
+      workExercises[name] = sets.filter((s) => !s.warmup);
+    });
+    const newPRs = [];
+    Object.entries(workExercises).forEach(([name, sets]) => {
       sets.forEach((s) => {
         const w = parseFloat(s.weight);
         if (w && (!prMap[name] || w > prMap[name].weight)) {
@@ -188,7 +214,7 @@ export default function App() {
         }
       });
     });
-    const newSession = { ...draft, id: uid() };
+    const newSession = { ...draft, exercises: workExercises, id: uid() };
     const newSessions = [...sessions, newSession];
     const ok = await storeSet("sessions", newSessions);
     if (ok) {
@@ -324,7 +350,8 @@ export default function App() {
         )}
 
         {tab === "log" && draft && (
-          <LogScreen draft={draft} workout={plan[draft.workout]} updateSet={updateSet} onUpdateCardio={updateCardio} prMap={prMap}
+          <LogScreen draft={draft} workout={plan[draft.workout]} updateSet={updateSet} onAddWarmup={addWarmupSet} onRemoveWarmup={removeWarmupSet}
+            onUpdateCardio={updateCardio} prMap={prMap}
             onCancel={() => { setDraft(null); setTab("home"); }} onSave={saveSession} />
         )}
 

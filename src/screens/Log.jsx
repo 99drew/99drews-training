@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, Timer, SkipForward, PlayCircle, Check, Trophy, Info, Activity } from "lucide-react";
+import { ChevronLeft, Timer, SkipForward, PlayCircle, Check, Trophy, Info, Activity, Plus, X } from "lucide-react";
 import { C, inputStyle } from "../lib/theme";
 import { beep, uid } from "../lib/helpers";
 import { requestNotificationPermission, scheduleRestNotification, cancelRestNotification } from "../lib/notifications";
 import ExerciseImage from "../components/ExerciseImage";
 
-export default function LogScreen({ draft, workout, updateSet, onUpdateCardio, prMap, onCancel, onSave }) {
+export default function LogScreen({ draft, workout, updateSet, onAddWarmup, onRemoveWarmup, onUpdateCardio, prMap, onCancel, onSave }) {
   const [timer, setTimer] = useState(null); // { id, total, remaining, exName }
   const intervalRef = useRef(null);
   const askedPermission = useRef(false);
@@ -75,7 +75,9 @@ export default function LogScreen({ draft, workout, updateSet, onUpdateCardio, p
         {workout.exercises.map((exx) => (
           <ExerciseLogCard key={exx.name} exercise={exx} sets={draft.exercises[exx.name]} pr={prMap[exx.name]}
             onChange={(idx, field, value) => updateSet(exx.name, idx, field, value)}
-            onToggleDone={(idx, next) => handleToggle(exx, idx, next)} />
+            onToggleDone={(idx, next) => handleToggle(exx, idx, next)}
+            onAddWarmup={() => onAddWarmup(exx.name)}
+            onRemoveWarmup={(idx) => onRemoveWarmup(exx.name, idx)} />
         ))}
 
         <CardioCard cardio={draft.cardio} onUpdateCardio={onUpdateCardio} />
@@ -129,11 +131,19 @@ function RestTimerBar({ timer, onAddFifteen, onStop }) {
   );
 }
 
-function ExerciseLogCard({ exercise, sets, pr, onChange, onToggleDone }) {
-  // sem recorde anterior = sem histórico nenhum ainda; se a 1ª série já
-  // veio preenchida (pela sugestão calculada a partir do peso corporal),
-  // mostra o aviso de que é só um ponto de partida.
-  const showSuggestionHint = !pr && Boolean(sets[0]?.weight) && !exercise.timed;
+function ExerciseLogCard({ exercise, sets, pr, onChange, onToggleDone, onAddWarmup, onRemoveWarmup }) {
+  // séries de aquecimento ficam misturadas no mesmo array (marcadas com
+  // `warmup: true`) mas sempre antes das séries de trabalho — indexado aqui
+  // pra preservar o índice real do array em onChange/onToggleDone/remove,
+  // já que warmupSets/workSets são só filtros pra exibição.
+  const indexed = sets.map((s, i) => ({ ...s, _idx: i }));
+  const warmupSets = indexed.filter((s) => s.warmup);
+  const workSets = indexed.filter((s) => !s.warmup);
+
+  // sem recorde anterior = sem histórico nenhum ainda; se a 1ª série de
+  // trabalho já veio preenchida (pela sugestão calculada a partir do peso
+  // corporal), mostra o aviso de que é só um ponto de partida.
+  const showSuggestionHint = !pr && Boolean(workSets[0]?.weight) && !exercise.timed;
 
   return (
     <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16, marginBottom: 14 }}>
@@ -166,26 +176,71 @@ function ExerciseLogCard({ exercise, sets, pr, onChange, onToggleDone }) {
         </div>
       )}
 
+      {warmupSets.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: C.textFaint, letterSpacing: 0.5, marginBottom: 6 }}>AQUECIMENTO</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {warmupSets.map((s, i) => (
+              <div key={s._idx} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 18, fontSize: 12, color: C.textFaint }}>A{i + 1}</div>
+                {exercise.timed ? (
+                  <input type="number" inputMode="numeric" placeholder="segundos" value={s.reps}
+                    onChange={(e) => onChange(s._idx, "reps", e.target.value)} style={inputStyle(1)} />
+                ) : (
+                  <>
+                    <input type="number" inputMode="decimal" placeholder="kg" value={s.weight}
+                      onChange={(e) => onChange(s._idx, "weight", e.target.value)} style={inputStyle()} />
+                    <input type="number" inputMode="numeric" placeholder="reps" value={s.reps}
+                      onChange={(e) => onChange(s._idx, "reps", e.target.value)} style={inputStyle()} />
+                  </>
+                )}
+                <button onClick={() => onToggleDone(s._idx, !s.done)} style={{
+                  width: 34, height: 34, borderRadius: 9, border: `1px solid ${s.done ? C.gold : C.border}`,
+                  background: s.done ? C.gold : "transparent", display: "flex", alignItems: "center", justifyContent: "center",
+                  flexShrink: 0, cursor: "pointer",
+                }}><Check size={16} color={s.done ? "#fff" : C.textDim} /></button>
+                <button onClick={() => onRemoveWarmup(s._idx)} style={{
+                  background: "none", border: "none", color: C.textFaint, cursor: "pointer", padding: 4, flexShrink: 0,
+                }}><X size={14} /></button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!exercise.timed && (
+        <button onClick={onAddWarmup} style={{
+          background: "none", border: "none", color: C.textDim, fontSize: 11.5, cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 4, padding: "2px 0", marginBottom: 10,
+        }}><Plus size={12} /> Adicionar aquecimento</button>
+      )}
+
+      {warmupSets.length > 0 && (
+        <div style={{ fontSize: 10, fontWeight: 700, color: C.textFaint, letterSpacing: 0.5, marginBottom: 6 }}>SÉRIES DE TRABALHO</div>
+      )}
+
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {sets.map((s, i) => {
+        {workSets.map((s, i) => {
           const w = parseFloat(s.weight);
           const isPR = Boolean(w) && (!pr || w > pr.weight);
           return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div key={s._idx} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 18, fontSize: 12, color: C.textDim }}>{i + 1}</div>
               {exercise.timed ? (
                 <input type="number" inputMode="numeric" placeholder="segundos" value={s.reps}
-                  onChange={(e) => onChange(i, "reps", e.target.value)} style={inputStyle(1)} />
+                  onChange={(e) => onChange(s._idx, "reps", e.target.value)} style={inputStyle(1)} />
               ) : (
                 <>
                   <input type="number" inputMode="decimal" placeholder="kg" value={s.weight}
-                    onChange={(e) => onChange(i, "weight", e.target.value)} style={inputStyle()} />
+                    onChange={(e) => onChange(s._idx, "weight", e.target.value)} style={inputStyle()} />
                   <input type="number" inputMode="numeric" placeholder="reps" value={s.reps}
-                    onChange={(e) => onChange(i, "reps", e.target.value)} style={inputStyle()} />
+                    onChange={(e) => onChange(s._idx, "reps", e.target.value)} style={inputStyle()} />
+                  <input type="number" inputMode="numeric" placeholder="RPE" min="1" max="10" value={s.rpe || ""}
+                    onChange={(e) => onChange(s._idx, "rpe", e.target.value)} style={inputStyle(0.65)} />
                 </>
               )}
               {isPR && <Trophy size={14} color={C.gold} style={{ flexShrink: 0 }} />}
-              <button onClick={() => onToggleDone(i, !s.done)} style={{
+              <button onClick={() => onToggleDone(s._idx, !s.done)} style={{
                 width: 34, height: 34, borderRadius: 9, border: `1px solid ${s.done ? C.gold : C.border}`,
                 background: s.done ? C.gold : "transparent", display: "flex", alignItems: "center", justifyContent: "center",
                 flexShrink: 0, cursor: "pointer",
