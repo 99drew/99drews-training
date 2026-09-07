@@ -1,8 +1,18 @@
-import { Flame, Dumbbell, Trophy, ChevronRight, BellRing } from "lucide-react";
+import { useMemo } from "react";
+import { Flame, Dumbbell, Trophy, ChevronRight, BellRing, Scale } from "lucide-react";
 import { C } from "../lib/theme";
-import { StatCard } from "../components/Shared";
+import { StatCard, Sparkline } from "../components/Shared";
 
-export default function HomeScreen({ plan, sessions, suggestedNext, streak, prCount, daysSinceLast, onStart }) {
+export default function HomeScreen({ plan, sessions, suggestedNext, streak, prCount, daysSinceLast, measurements, onStart }) {
+  const weightData = useMemo(() => {
+    return [...measurements].filter((m) => m.weight)
+      .map((m) => ({ date: m.date, weight: parseFloat(m.weight) }))
+      .sort((a, b) => (a.date < b.date ? -1 : 1));
+  }, [measurements]);
+  const lastWeight = weightData.length ? weightData[weightData.length - 1].weight : null;
+  const firstWeight = weightData.length ? weightData[0].weight : null;
+  const weightDelta = lastWeight !== null && firstWeight !== null ? lastWeight - firstWeight : null;
+
   return (
     <div style={{ padding: "calc(30px + env(safe-area-inset-top)) 20px 20px" }}>
       <div style={{ marginBottom: 26 }}>
@@ -27,6 +37,24 @@ export default function HomeScreen({ plan, sessions, suggestedNext, streak, prCo
         <StatCard icon={<Dumbbell size={17} color={C.primary} />} value={sessions.length} label="treinos" />
         <StatCard icon={<Trophy size={17} color={C.gold} />} value={prCount} label="recordes" />
       </div>
+
+      {weightData.length >= 2 && (
+        <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: "14px 16px", marginBottom: 26 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <Scale size={14} color={C.textDim} />
+              <span style={{ fontSize: 11.5, fontWeight: 700, color: C.textDim, letterSpacing: 0.4 }}>PESO CORPORAL</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span className="disp" style={{ fontSize: 18, fontWeight: 600 }}>{lastWeight}kg</span>
+              {weightDelta !== null && weightDelta !== 0 && (
+                <span style={{ fontSize: 11, color: weightDelta > 0 ? C.textDim : C.gold }}>{weightDelta > 0 ? "+" : ""}{weightDelta.toFixed(1)}kg</span>
+              )}
+            </div>
+          </div>
+          <Sparkline data={weightData.map((d) => d.weight)} color={C.gold} />
+        </div>
+      )}
 
       <div style={{ fontSize: 12.5, color: C.textDim, marginBottom: 12, fontWeight: 700, letterSpacing: 1 }}>TREINO DE HOJE</div>
 
