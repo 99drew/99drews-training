@@ -65,6 +65,15 @@ export async function photoGetURL(id) {
   }
 }
 
+export async function photoGetBlob(id) {
+  try {
+    const db = await getDB();
+    return (await db.get(PHOTO_STORE, id)) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 export async function photoDelete(id) {
   try {
     const db = await getDB();

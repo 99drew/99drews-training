@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, Suspense, lazy } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense, lazy } from "react";
 import { C, FONTS, SYSTEM_FONT } from "./lib/theme";
 import { DEFAULT_PLAN, ROTATION } from "./lib/plan";
 import { todayISO, lastSetsFor, seedSets, uid } from "./lib/helpers";
-import { storeGet, storeSet, photoSet, photoDelete } from "./lib/db";
+import { storeGet, storeSet, photoSet, photoDelete, photoGetBlob } from "./lib/db";
 
 import HomeScreen from "./screens/Home";
 import LogScreen from "./screens/Log";
@@ -29,6 +29,7 @@ export default function App() {
   const [draft, setDraft] = useState(null);
   const [expandedSession, setExpandedSession] = useState(null);
   const [toast, setToast] = useState(null);
+  const toastTimerRef = useRef(null);
   const [progressExercise, setProgressExercise] = useState(null);
   const [profile, setProfile] = useState({ height: null });
 
@@ -69,9 +70,12 @@ export default function App() {
     storeSet("draft", draft);
   }, [draft, loading]);
 
-  function showToast(msg) {
-    setToast(msg);
-    setTimeout(() => setToast(null), 3200);
+  // action opcional ({ label, onClick }) mostra um botão no toast (ex: "Desfazer")
+  // — dura mais tempo que um toast simples, pra dar tempo de reagir.
+  function showToast(msg, { action, duration = 3200 } = {}) {
+    clearTimeout(toastTimerRef.current);
+    setToast({ msg, action });
+    toastTimerRef.current = setTimeout(() => setToast(null), action ? Math.max(duration, 4500) : duration);
   }
 
   const allExercises = useMemo(() => Object.values(plan).flatMap((w) => w.exercises), [plan]);
@@ -117,11 +121,44 @@ export default function App() {
     return count;
   }, [sessions]);
 
+  // dias desde o último treino registrado, pro lembrete na Home — mesmo
+  // corte de 4 dias usado no cálculo de streak acima (streak quebra depois
+  // disso), então o aviso aparece um pouco antes desse limite.
+  const daysSinceLast = useMemo(() => {
+    if (!sessions.length) return null;
+    const lastDate = [...sessions].sort((a, b) => (a.date < b.date ? 1 : -1))[0].date;
+    return Math.floor((new Date(todayISO()) - new Date(lastDate)) / 86400000);
+  }, [sessions]);
+
   function startWorkout(key) {
     const exercises = {};
     plan[key].exercises.forEach((exx) => { exercises[exx.name] = seedSets(exx, lastSetsFor(sessions, exx.name), bodyWeight); });
     setDraft({ workout: key, date: todayISO(), exercises });
     setTab("log");
+  }
+
+  // Repete um treino já registrado como um novo rascunho de hoje, com os
+  // mesmos pesos/reps de partida (em vez da sugestão calculada). Usa os
+  // exercícios do plano ATUAL pro dia — se algum exercício foi trocado desde
+  // então, o novo entra com a sugestão normal em vez de ficar sem valor.
+  function duplicateSession(session) {
+    const planForDay = plan[session.workout];
+    if (!planForDay) { showToast("Esse treino não existe mais no plano atual."); return; }
+    const exercises = {};
+    planForDay.exercises.forEach((exx) => {
+      const prevSets = session.exercises[exx.name];
+      exercises[exx.name] = prevSets
+        ? prevSets.map((s) => ({ weight: s.weight || "", reps: s.reps || "", done: false }))
+        : seedSets(exx, lastSetsFor(sessions, exx.name), bodyWeight);
+    });
+    setDraft({ workout: session.workout, date: todayISO(), exercises, cardio: session.cardio ? { ...session.cardio } : undefined });
+    setTab("log");
+    showToast("Treino duplicado — revise e salve quando terminar.");
+  }
+
+  async function editSession(id, updatedExercises) {
+    const newSessions = sessions.map((s) => (s.id === id ? { ...s, exercises: updatedExercises } : s));
+    if (await storeSet("sessions", newSessions)) { setSessions(newSessions); showToast("Registro atualizado!"); }
   }
 
   function updateSet(name, idx, field, value) {
@@ -165,8 +202,20 @@ export default function App() {
   }
 
   async function deleteSession(id) {
+    const removed = sessions.find((s) => s.id === id);
     const newSessions = sessions.filter((s) => s.id !== id);
-    if (await storeSet("sessions", newSessions)) setSessions(newSessions);
+    if (await storeSet("sessions", newSessions)) {
+      setSessions(newSessions);
+      if (removed) showToast("Treino excluído.", { action: { label: "Desfazer", onClick: () => restoreSession(removed) } });
+    }
+  }
+
+  function restoreSession(session) {
+    setSessions((prev) => {
+      const next = [...prev, session].sort((a, b) => (a.date < b.date ? -1 : 1));
+      storeSet("sessions", next);
+      return next;
+    });
   }
 
   // customized=false (usado só por "Restaurar plano original") apaga o
@@ -194,8 +243,20 @@ export default function App() {
     if (await storeSet("measurements", newList)) { setMeasurements(newList); showToast("Medida registrada!"); }
   }
   async function deleteMeasurement(id) {
+    const removed = measurements.find((m) => m.id === id);
     const newList = measurements.filter((m) => m.id !== id);
-    if (await storeSet("measurements", newList)) setMeasurements(newList);
+    if (await storeSet("measurements", newList)) {
+      setMeasurements(newList);
+      if (removed) showToast("Medida excluída.", { action: { label: "Desfazer", onClick: () => restoreMeasurement(removed) } });
+    }
+  }
+
+  function restoreMeasurement(measurement) {
+    setMeasurements((prev) => {
+      const next = [...prev, measurement].sort((a, b) => (a.date < b.date ? -1 : 1));
+      storeSet("measurements", next);
+      return next;
+    });
   }
 
   async function addPhoto(entry, blob) {
@@ -206,9 +267,23 @@ export default function App() {
     if (await storeSet("photoIndex", newIndex)) { setPhotoIndex(newIndex); showToast("Foto salva!"); }
   }
   async function deletePhoto(id) {
+    const removed = photoIndex.find((p) => p.id === id);
+    const blob = removed ? await photoGetBlob(id) : null;
     const newIndex = photoIndex.filter((p) => p.id !== id);
     if (await storeSet("photoIndex", newIndex)) setPhotoIndex(newIndex);
     await photoDelete(id);
+    if (removed && blob) {
+      showToast("Foto excluída.", { action: { label: "Desfazer", onClick: () => restorePhoto(removed, blob) } });
+    }
+  }
+
+  async function restorePhoto(entry, blob) {
+    if (!(await photoSet(entry.id, blob))) return;
+    setPhotoIndex((prev) => {
+      const next = [...prev, entry].sort((a, b) => (a.date < b.date ? -1 : 1));
+      storeSet("photoIndex", next);
+      return next;
+    });
   }
 
   if (loading) {
@@ -229,14 +304,23 @@ export default function App() {
         <div style={{
           position: "fixed", top: 14, left: 16, right: 16, zIndex: 100,
           background: C.surface3, border: `1px solid ${C.gold}`, color: C.text,
-          borderRadius: 12, padding: "12px 16px", fontSize: 13.5, textAlign: "center",
+          borderRadius: 12, padding: "12px 16px", fontSize: 13.5,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
           boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-        }}>{toast}</div>
+        }}>
+          <span style={{ textAlign: toast.action ? "left" : "center", flex: 1 }}>{toast.msg}</span>
+          {toast.action && (
+            <button onClick={() => { toast.action.onClick(); setToast(null); }} style={{
+              background: "none", border: "none", color: C.gold, fontWeight: 700, fontSize: 13, cursor: "pointer", flexShrink: 0, padding: 0,
+            }}>{toast.action.label}</button>
+          )}
+        </div>
       )}
 
       <div style={{ position: "relative", zIndex: 1 }}>
         {tab === "home" && (
-          <HomeScreen plan={plan} sessions={sessions} suggestedNext={suggestedNext} streak={streak} prCount={Object.keys(prMap).length} onStart={startWorkout} />
+          <HomeScreen plan={plan} sessions={sessions} suggestedNext={suggestedNext} streak={streak} prCount={Object.keys(prMap).length}
+            daysSinceLast={daysSinceLast} onStart={startWorkout} />
         )}
 
         {tab === "log" && draft && (
@@ -245,7 +329,8 @@ export default function App() {
         )}
 
         {tab === "history" && (
-          <HistoryScreen sessions={sessions} expanded={expandedSession} setExpanded={setExpandedSession} onDelete={deleteSession} />
+          <HistoryScreen sessions={sessions} expanded={expandedSession} setExpanded={setExpandedSession} onDelete={deleteSession}
+            onDuplicate={duplicateSession} onEditSession={editSession} />
         )}
 
         {tab === "progress" && (
