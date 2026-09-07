@@ -6,9 +6,10 @@
 // position:fixed + filter:blur em elementos descendentes tem um bug
 // conhecido no WebKit/iOS (o blur falha e mostra o SVG cru, com listras
 // e desalinhamento horizontal) — reproduzido no aparelho real da Cindy.
-// Como absolute, o fundo rola junto com o conteúdo em telas mais altas
-// que a viewport, revelando o navy sólido (C.bg) por baixo — troca
-// aceitável por não quebrar o rendering no Safari.
+// inset:0 (não height:100dvh) pra esticar até a altura real do conteúdo
+// do pai posicionado — senão, em telas mais altas que um viewport (ex:
+// Log com muitos exercícios), o fundo parava em 100dvh e revelava uma
+// linha visível onde o navy sólido (C.bg) começava por baixo.
 
 function mulberry32(seed) {
   let s = seed;
@@ -123,7 +124,7 @@ function BlobCluster({ cfg }) {
 
 export default function BackgroundArt() {
   return (
-    <div aria-hidden="true" style={{ position: "absolute", top: 0, left: 0, right: 0, height: "100dvh", overflow: "hidden", zIndex: 0, pointerEvents: "none" }}>
+    <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", zIndex: 0, pointerEvents: "none" }}>
       {CLUSTERS.map((cfg) => <BlobCluster key={cfg.seed} cfg={cfg} />)}
     </div>
   );
