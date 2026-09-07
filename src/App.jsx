@@ -320,7 +320,7 @@ export default function App() {
       <div style={{ position: "relative", zIndex: 1 }}>
         {tab === "home" && (
           <HomeScreen plan={plan} sessions={sessions} suggestedNext={suggestedNext} streak={streak} prCount={Object.keys(prMap).length}
-            daysSinceLast={daysSinceLast} onStart={startWorkout} />
+            daysSinceLast={daysSinceLast} measurements={measurements} onStart={startWorkout} />
         )}
 
         {tab === "log" && draft && (

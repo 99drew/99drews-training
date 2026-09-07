@@ -5,6 +5,37 @@ import { C } from "../lib/theme";
 import { fmtDate, todayISO } from "../lib/helpers";
 import { StatCard, EmptyState, ChartCard, tooltipStyle } from "../components/Shared";
 
+const HEATMAP_WEEKS = 18;
+const DOW_LABELS = ["D", "S", "T", "Q", "Q", "S", "S"];
+
+// Grade de semanas (colunas) x dias (linhas, domingo a sábado), alinhada ao
+// fim da semana atual — mesmo formato do calendário de contribuições do
+// GitHub. Dias no futuro (resto da semana atual) ficam marcados como tal
+// pra não desenhar quadrado nenhum ali.
+function buildHeatmapWeeks(sessions, weeks = HEATMAP_WEEKS) {
+  const countByDate = {};
+  sessions.forEach((s) => { countByDate[s.date] = (countByDate[s.date] || 0) + 1; });
+
+  const today = new Date(todayISO() + "T00:00:00");
+  const endOfWeek = new Date(today);
+  endOfWeek.setDate(today.getDate() + (6 - today.getDay()));
+  const startDate = new Date(endOfWeek);
+  startDate.setDate(endOfWeek.getDate() - weeks * 7 + 1);
+
+  const cols = [];
+  for (let w = 0; w < weeks; w++) {
+    const col = [];
+    for (let d = 0; d < 7; d++) {
+      const day = new Date(startDate);
+      day.setDate(startDate.getDate() + w * 7 + d);
+      const iso = day.toISOString().slice(0, 10);
+      col.push({ date: iso, count: countByDate[iso] || 0, isFuture: day > today });
+    }
+    cols.push(col);
+  }
+  return cols;
+}
+
 export default function ProgressScreen({ sessions, allExercises, exercise, setExercise, prMap, streak }) {
   const [view, setView] = useState("exercicio");
 
@@ -43,6 +74,9 @@ export default function ProgressScreen({ sessions, allExercises, exercise, setEx
     return { week, month };
   }, [sessions]);
 
+  const heatmapWeeks = useMemo(() => buildHeatmapWeeks(sessions), [sessions]);
+  const heatmapDaysTrained = heatmapWeeks.flat().filter((d) => d.count > 0).length;
+
   const prList = Object.entries(prMap).sort((a, b) => (a[1].date < b[1].date ? 1 : -1));
   const last = exerciseData.length ? exerciseData[exerciseData.length - 1].weight : null;
   const first = exerciseData.length ? exerciseData[0].weight : null;
@@ -61,7 +95,7 @@ export default function ProgressScreen({ sessions, allExercises, exercise, setEx
       )}
 
       <div style={{ display: "flex", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 4, marginBottom: 20 }}>
-        {[["exercicio", "Exercício"], ["musculo", "Grupo muscular"], ["recordes", "Recordes"]].map(([k, label]) => (
+        {[["exercicio", "Exercício"], ["musculo", "Grupo muscular"], ["recordes", "Recordes"], ["consistencia", "Consistência"]].map(([k, label]) => (
           <button key={k} onClick={() => setView(k)} style={{
             flex: 1, padding: "9px 0", borderRadius: 9, border: "none", cursor: "pointer",
             background: view === k ? C.primary : "transparent", color: view === k ? "#fff" : C.textDim,
@@ -130,6 +164,36 @@ export default function ProgressScreen({ sessions, allExercises, exercise, setEx
                 </div>
               </div>
             ))}
+          </div>
+        )
+      )}
+
+      {view === "consistencia" && (
+        sessions.length === 0 ? <EmptyState text="Seu calendário de treinos vai aparecer aqui conforme você registra sessões." /> : (
+          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 12.5, color: C.textDim, marginBottom: 14 }}>
+              <strong style={{ color: C.text }}>{heatmapDaysTrained}</strong> dia{heatmapDaysTrained !== 1 ? "s" : ""} com treino nas últimas {HEATMAP_WEEKS} semanas
+            </div>
+            <div style={{ overflowX: "auto" }}>
+              <div style={{ display: "flex", gap: 4, width: "max-content" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3, marginRight: 2 }}>
+                  {DOW_LABELS.map((l, i) => (
+                    <div key={i} style={{ width: 12, height: 12, fontSize: 8.5, color: C.textFaint, display: "flex", alignItems: "center", justifyContent: "center" }}>{l}</div>
+                  ))}
+                </div>
+                {heatmapWeeks.map((col, wi) => (
+                  <div key={wi} style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                    {col.map((day) => (
+                      <div key={day.date} title={day.count > 0 ? `${fmtDate(day.date)} · treinou` : fmtDate(day.date)} style={{
+                        width: 12, height: 12, borderRadius: 3,
+                        background: day.isFuture ? "transparent" : day.count > 0 ? C.primary : C.surface2,
+                        border: day.isFuture ? "none" : `1px solid ${C.border}`,
+                      }} />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )
       )}
